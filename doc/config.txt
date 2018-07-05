@@ -1,0 +1,3 @@
+x lf d	;BaseNote,BaseFreq,Transpose
+d d	;TTL,decay
+f f	;depress,feedback
