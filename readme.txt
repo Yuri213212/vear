@@ -1,4 +1,4 @@
-﻿vear (ver 0.2 beta) by Yuri213212
+﻿vear (ver 0.3 beta) by Yuri213212
 
 使用协议：对于所有文件遵循CC BY-NC-SA 4.0。
 https://creativecommons.org/licenses/by-nc-sa/4.0/

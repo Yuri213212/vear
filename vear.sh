@@ -1,1 +1,1 @@
-i686-pc-mingw32-gcc -O3 -o vear.exe vear.c -mwindows -lgdi32 -lwinmm
+i686-pc-mingw32-gcc -Wall -O3 -s -o vear.exe vear.c -mwindows -lgdi32 -lwinmm

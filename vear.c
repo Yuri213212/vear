@@ -44,12 +44,7 @@ struct rlcdt{
 	int ttl;
 };
 
-int argc;
-WCHAR **argv;
-HINSTANCE hInstance;
-int iCmdShow;
-STARTUPINFOW si;
-
+WCHAR wbuf[tbuflen];
 int cxScreen,cyScreen,width,height,pause=0,mode=0,amp=0,Transpose=0,defTp=0,TTLMAX=2,i,j,temp;
 float b,in,DECAY=1.0/24.0,d=0.5,f=1.0,dv=0.5;
 double BaseFreq=440.0,BaseNote=4.75,t1,t2,t3,p,w0,l;
@@ -87,13 +82,13 @@ int translateKey(int x){
 }
 
 void DisplayBuffer(HWND hwnd,short *buffer){
-	const float OUTREG=2.0/BufferLength,LOGREG=10.0/48.0,THRES=1.0/180.0;
+	const float AMPREG=32768.0*M_SQRT1_2,OUTREG=2.0/BufferLength,LOGREG=M_LN10/M_LN2/16.0,THRES=1.0/180.0;
 
 	static float left,out;
 
 	if (pause) return;
 	for (j=0;j<BufferLength;++j){
-		in=((int)buffer[j]<<amp)/32768.0f;
+		in=((int)buffer[j]<<(amp>>1))/(amp&1?AMPREG:32768.0f);
 		if (!(j%5)){
 			apt[j/5].y=93-(int)roundf(in*93.0f);
 		}
@@ -155,7 +150,7 @@ void DisplayBuffer(HWND hwnd,short *buffer){
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam){
-	static SCROLLINFO vsi={sizeof(SCROLLINFO),SIF_DISABLENOSCROLL|SIF_PAGE|SIF_POS|SIF_RANGE,0,8,1,8,0};
+	static SCROLLINFO vsi={sizeof(SCROLLINFO),SIF_DISABLENOSCROLL|SIF_PAGE|SIF_POS|SIF_RANGE,0,16,1,16,0};
 	static SCROLLINFO hsi={sizeof(SCROLLINFO),SIF_DISABLENOSCROLL|SIF_PAGE|SIF_POS|SIF_RANGE,0,11,1,0,0};
 	static int endflag=0;
 	static HBITMAP hBitmap;
@@ -177,6 +172,15 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam){
 		ReleaseDC(hwnd,hdc);
 		SelectObject(hdcMem,hBitmap);
 		FillRect(hdcMem,&bgRect,GetStockObject(BLACK_BRUSH));
+		SelectObject(hdcMem,hPenGray);
+		for (i=0;i<16;++i){
+			MoveToEx(hdcMem,0,clheight*i/32,NULL);
+			LineTo(hdcMem,clwidth,clheight*i/32);
+		}
+		for (i=1;i<16;++i){
+			MoveToEx(hdcMem,0,clheight/2+(clheight-clheight/2-6)*i/16,NULL);
+			LineTo(hdcMem,clwidth,clheight/2+(clheight-clheight/2-6)*i/16);
+		}
 		SelectObject(hdcMem,GetStockObject(WHITE_PEN));
 		MoveToEx(hdcMem,0,clheight/2,NULL);
 		LineTo(hdcMem,clwidth,clheight/2);
@@ -248,7 +252,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam){
 			return 0;
 		case 40002:
 			amp=mode=pause=0;
-			SetScrollPos(hwnd,SB_VERT,8,TRUE);
+			SetScrollPos(hwnd,SB_VERT,16,TRUE);
 			SetScrollPos(hwnd,SB_HORZ,Transpose=defTp,TRUE);
 			MoveWindow(hwnd,(cxScreen-width)/2,(cyScreen-height)/2,width,height,TRUE);
 			return 0;
@@ -273,17 +277,17 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam){
 			--amp;
 			break;
 		case SB_THUMBTRACK:
-			amp=8-HIWORD(wParam);
+			amp=16-HIWORD(wParam);
 			break;
 		default:
 			return 0;
 		}
-		if (amp>8){
-			amp=8;
+		if (amp>16){
+			amp=16;
 		}else if (amp<0){
 			amp=0;
 		}
-		SetScrollPos(hwnd,SB_VERT,8-amp,TRUE);
+		SetScrollPos(hwnd,SB_VERT,16-amp,TRUE);
 		return 0;
 	case WM_HSCROLL:
 		switch(LOWORD(wParam)){
@@ -386,7 +390,11 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam){
 }
 
 int main(){
-	static WCHAR wbuf[tbuflen];
+	static int argc;
+	static WCHAR **argv;
+	static HINSTANCE hInstance;
+	static int iCmdShow;
+	static STARTUPINFOW si;
 	static POINT aptLt[12]={
 		{0,4},
 		{2,2},
@@ -504,7 +512,7 @@ int main(){
 		DestroyIcon(hIcon);
 		return 0;
 	}
-	if (fp=_wfopen(szSettingFile,L"rb")){
+	if ((fp=_wfopen(szSettingFile,L"rb"))){
 		fscanf(fp,"%x",&temp);
 		BaseNote=(temp>>4)+(temp&15)/12.0;
 		fscanf(fp,"%lf",&BaseFreq);
