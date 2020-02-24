@@ -3,6 +3,7 @@
 #define szErr_AudioDevice	L"オーディオデバイスが開けませんでした。"
 #define szMenu_Pause		L"一時停止"
 #define szMenu_Reset		L"初期化"
+#define szMenu_Color		L"色"
 #define szMenu_Mode		L"モード"
 #define szMenu_Help		L"ヘルプ"
 

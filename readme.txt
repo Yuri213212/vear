@@ -1,4 +1,4 @@
-﻿vear (ver 0.3 beta) by Yuri213212
+﻿vear (ver 0.4 beta) by Yuri213212
 
 使用协议：对于所有文件遵循CC BY-NC-SA 4.0。
 https://creativecommons.org/licenses/by-nc-sa/4.0/
@@ -15,6 +15,7 @@ https://creativecommons.org/licenses/by-nc-sa/4.0/
 ·使用纵向滚动条或上下箭头键调节增益
 ·使用水平滚动条、左右箭头键或字母键改变调号
 ·按“模式”按钮或tab键改变频谱图的信号源（虚拟神经网络处理后或处理前）
+·按“颜色”按钮改变频谱图的颜色
 ·按“暂停”按钮或空格键来暂停或继续分析
 ·按“重启”按钮或Esc键恢复程序启动时的状态
 

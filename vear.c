@@ -1,7 +1,7 @@
 /***
 
-vear v0.2 Beta
-Copyright (C) 2016-2018 Yuri213212
+vear v0.4 Beta
+Copyright (C) 2016-2020 Yuri213212
 Site:https://github.com/Yuri213212/vear
 Email: yuri213212@vip.qq.com
 License: CC BY-NC-SA 4.0
@@ -45,7 +45,7 @@ struct rlcdt{
 };
 
 WCHAR wbuf[tbuflen];
-int cxScreen,cyScreen,width,height,pause=0,mode=0,amp=0,Transpose=0,defTp=0,TTLMAX=2,i,j,temp;
+int cxScreen,cyScreen,width,height,pause=0,color=1,mode=0,amp=0,Transpose=0,defTp=0,TTLMAX=2,i,j,temp;
 float b,in,DECAY=1.0/24.0,d=0.5,f=1.0,dv=0.5;
 double BaseFreq=440.0,BaseNote=4.75,t1,t2,t3,p,w0,l;
 struct rlcdt bar[100];
@@ -81,10 +81,69 @@ int translateKey(int x){
 	return -1;
 }
 
+int getColor(float x){
+	const float gamma=1.0/1.68,p1=1.0/6.0,p2=2.0/6.0,p3=3.0/6.0,p4=4.0/6.0,p5=5.0/6.0;
+
+	float R,G,B;
+	int r,g,b;
+
+	if (x>1.0f){
+		x=1.0f;
+	}
+	if (x<0.0f){
+		x=0.0f;
+	}
+	if (x>=p5){
+		R=1.0f;
+	}else if (x>=p4){
+		R=(x-p4)*6.0f;
+	}else if (x<=p2){
+		if (x<=p1){
+			R=x*3.0f;
+		}else{
+			R=(p2-x)*3.0f;
+		}
+	}else{
+		R=0.0f;
+	}
+	r=(int)roundf(R*powf(x,gamma)*256.0f);
+	if (r>255){
+		r=255;
+	}
+	if (x>=p5){
+		G=(1.0f-x)*6.0f;
+	}else if (x>=p3){
+		G=1.0f;
+	}else if (x>=p2){
+		G=(x-p2)*6.0f;
+	}else{
+		G=0.0f;
+	}
+	g=(int)roundf(G*powf(x,gamma)*256.0f);
+	if (g>255){
+		g=255;
+	}
+	if (x>=p4){
+		B=0.0f;
+	}else if (x>=p3){
+		B=(p4-x)*6.0f;
+	}else if (x>=p2){
+		B=1.0f;
+	}else{
+		B=x*3.0f;
+	}
+	b=(int)roundf(B*powf(x,gamma)*256.0f);
+	if (b>255){
+		b=255;
+	}
+	return RGB(r,g,b);
+}
+
 void DisplayBuffer(HWND hwnd,short *buffer){
 	const float AMPREG=32768.0*M_SQRT1_2,OUTREG=2.0/BufferLength,LOGREG=M_LN10/M_LN2/16.0,THRES=1.0/180.0;
 
 	static float left,out;
+	static HBRUSH hBrush;
 
 	if (pause) return;
 	for (j=0;j<BufferLength;++j){
@@ -137,8 +196,16 @@ void DisplayBuffer(HWND hwnd,short *buffer){
 			bar[i].max=out;
 		}
 		temp=368.0f-180.0f*out;
-		Rectangle(hdcMem,bar[i].x+1,temp,bar[i].x+7,370);
-		SelectObject(hdcMem,hPenCyan);
+		if (color){
+			hBrush=CreateSolidBrush(getColor((out*2.0f+1.0f)/3.0f));
+			SelectObject(hdcMem,hBrush);
+			Rectangle(hdcMem,bar[i].x+1,temp,bar[i].x+7,370);
+			DeleteObject(hBrush);
+			SelectObject(hdcMem,GetStockObject(WHITE_PEN));
+		}else{
+			Rectangle(hdcMem,bar[i].x+1,temp,bar[i].x+7,370);
+			SelectObject(hdcMem,hPenCyan);
+		}
 		temp=368.0f-180.0f*bar[i].max;
 		MoveToEx(hdcMem,bar[i].x+1,temp,NULL);
 		LineTo(hdcMem,bar[i].x+6,temp);
@@ -252,14 +319,18 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam){
 			return 0;
 		case 40002:
 			amp=mode=pause=0;
+			color=1;
 			SetScrollPos(hwnd,SB_VERT,16,TRUE);
 			SetScrollPos(hwnd,SB_HORZ,Transpose=defTp,TRUE);
 			MoveWindow(hwnd,(cxScreen-width)/2,(cyScreen-height)/2,width,height,TRUE);
 			return 0;
 		case 40003:
-			mode^=1;
+			color^=1;
 			return 0;
 		case 40004:
+			mode^=1;
+			return 0;
+		case 40005:
 			MessageBoxW(NULL,szHelp,szTitle,MB_ICONINFORMATION);
 			return 0;
 		default:
@@ -566,8 +637,9 @@ int main(){
 	hMenu=CreateMenu();
 	AppendMenuW(hMenu,MF_STRING,40001,szMenu_Pause);
 	AppendMenuW(hMenu,MF_STRING,40002,szMenu_Reset);
-	AppendMenuW(hMenu,MF_STRING,40003,szMenu_Mode);
-	AppendMenuW(hMenu,MF_STRING,40004,szMenu_Help);
+	AppendMenuW(hMenu,MF_STRING,40003,szMenu_Color);
+	AppendMenuW(hMenu,MF_STRING,40004,szMenu_Mode);
+	AppendMenuW(hMenu,MF_STRING,40005,szMenu_Help);
 	hwnd=CreateWindowW(szAppName,szTitle,WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX|WS_VSCROLL|WS_HSCROLL,(cxScreen-width)/2,(cyScreen-height)/2,width,height,NULL,hMenu,hInstance,NULL);
 	ShowWindow(hwnd,iCmdShow);
 	UpdateWindow(hwnd);

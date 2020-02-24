@@ -3,6 +3,7 @@
 #define szErr_AudioDevice	L"无法打开音频设备！"
 #define szMenu_Pause		L"暂停"
 #define szMenu_Reset		L"重启"
+#define szMenu_Color		L"颜色"
 #define szMenu_Mode		L"模式"
 #define szMenu_Help		L"帮助"
 
