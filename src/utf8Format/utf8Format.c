@@ -8,7 +8,6 @@ int utf8_checkBOM(FILE *fp){
 	int i;
 	char c;
 
-	rewind(fp);
 	fseek(fp,0,SEEK_END);
 	i=ftell(fp);
 	rewind(fp);

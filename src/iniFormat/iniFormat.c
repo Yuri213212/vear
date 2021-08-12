@@ -1,23 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include "../vlstr.h"
-#include "../utf8Format.h"
-
-struct iniKey{
-	char *key;
-	char *value;
-	struct iniKey *prev;
-	struct iniKey *next;
-};
-
-struct iniSection{
-	char *section;
-	struct iniKey kroot;
-	struct iniSection *prev;
-	struct iniSection *next;
-};
+#include "iniFormat.h"
 
 char *str_copy(char *si){
 	char *so;
@@ -244,7 +225,7 @@ struct iniSection *ini_read(FILE *fp){
 				break;
 			}
 			if (c==']'){
-				sp=iniSection_new(sroot,vlstr_getdata(sstr));
+				sp=iniSection_new(sroot,vlstr_getData(sstr));
 				state=0;
 				break;
 			}
@@ -262,10 +243,9 @@ struct iniSection *ini_read(FILE *fp){
 			vlstr_addc(kstr,c);
 			break;
 		case 4://value start
-			if (isspace(c)) break;
 			if (c<0||c==';'||c=='\n'){
-				vlstr_trimend(kstr);
-				iniKey_new_r(&sp->kroot,vlstr_getdata(kstr),"");
+				vlstr_trimEnd(kstr);
+				iniKey_new_r(&sp->kroot,vlstr_getData(kstr),"");
 				vlstr_clear(kstr);
 				if (c==';'){
 					state=1;
@@ -274,6 +254,7 @@ struct iniSection *ini_read(FILE *fp){
 				}
 				break;
 			}
+			if (isspace(c)) break;
 			vlstr_addc(vstr,c);
 			if (c=='\"'){
 				state=6;
@@ -283,9 +264,9 @@ struct iniSection *ini_read(FILE *fp){
 			break;
 		case 5://value
 			if (c<0||c==';'||c=='\n'){
-				vlstr_trimend(kstr);
-				vlstr_trimend(vstr);
-				iniKey_new_r(&sp->kroot,vlstr_getdata(kstr),vlstr_getdata(vstr));
+				vlstr_trimEnd(kstr);
+				vlstr_trimEnd(vstr);
+				iniKey_new_r(&sp->kroot,vlstr_getData(kstr),vlstr_getData(vstr));
 				vlstr_clear(kstr);
 				vlstr_clear(vstr);
 				if (c==';'){

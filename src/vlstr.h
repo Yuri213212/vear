@@ -21,7 +21,7 @@ void vlstr_clear(HVLSTR hvlstr);
 void vlstr_addc(HVLSTR hvlstr,char c);
 
 //add string to end
-void vlstr_adds(HVLSTR hvlstr,char *s);
+void vlstr_adds(HVLSTR hvlstr,const char *s);
 
 //add data of string object to end
 void vlstr_addstr(HVLSTR hvlstr,HVLSTR hvlstr2);
@@ -31,7 +31,7 @@ void vlstr_addstr(HVLSTR hvlstr,HVLSTR hvlstr2);
 HVLSTR vlstr_concat(HVLSTR hvlstr1,HVLSTR hvlstr2);
 
 //remove blank characters from end
-void vlstr_trimend(HVLSTR hvlstr);
+void vlstr_trimEnd(HVLSTR hvlstr);
 
 //compare to another string object
 int vlstr_compare(HVLSTR hvlstr,HVLSTR hvlstr2);
@@ -39,12 +39,15 @@ int vlstr_compare(HVLSTR hvlstr,HVLSTR hvlstr2);
 //get length of string object
 int vlstr_length(HVLSTR hvlstr);
 
+//get last char of string object
+char vlstr_last(HVLSTR hvlstr);
+
 //get the pointer to internal data
 //do NOT modify the data, the structure may get corrupted
-char *vlstr_getdata(HVLSTR hvlstr);
+char *vlstr_getData(HVLSTR hvlstr);
 
 //get a copy of current data
 //call free to free memory
-char *vlstr_copydata(HVLSTR hvlstr);
+char *vlstr_copyData(HVLSTR hvlstr);
 
 #endif

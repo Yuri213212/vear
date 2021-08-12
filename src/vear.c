@@ -1,7 +1,7 @@
 /***
 
-vear v1.0
-Copyright (C) 2016-2020 Yuri213212
+vear v1.1
+Copyright (C) 2016-2021 Yuri213212
 Site:https://github.com/Yuri213212/vear
 Email: yuri213212@vip.qq.com
 License: CC BY-NC-SA 4.0
@@ -9,61 +9,75 @@ https://creativecommons.org/licenses/by-nc-sa/4.0/
 
 ***/
 
-#define UNICODE
-#define _UNICODE
+#include "vear.h"
 
-#include <windows.h>
-#include <stdio.h>
-#include <wchar.h>
-#include <math.h>
-#ifdef LANG_EN
-#include "lang_en/vear_ui.h"
-#include "lang_en/vear_help.h"
-#endif
-#ifdef LANG_CH
-#include "lang_ch/vear_ui.h"
-#include "lang_ch/vear_help.h"
-#endif
-#ifdef LANG_JP
-#include "lang_jp/vear_ui.h"
-#include "lang_jp/vear_help.h"
-#endif
-#include "iniFormat.h"
+wchar_t *notetext(wchar_t *buf,int x){
+	static wchar_t buf0[4];
 
-#define tbuflen 1024
-#define clwidth 587
-#define clheight 375
-#define SampleRate 44100
-#define BufferLength 2940	//15fps
+	int r;
 
-#define SYSMENU_Top	0x0010
-enum menuEnum{
-	Menu_Pause=0x8001,
-	Menu_Reset,
-	Menu_Color,
-	Menu_Mode,
-	Menu_Help,
-};
-
-#include "settings.h"
-
-wchar_t wbuf[tbuflen];
-int cxScreen,cyScreen,width,height,pause=0,color=1,mode=0,amp=0,transpose=0;
-POINT apt[588];
-HDC hdcMem;
-HPEN hPenRed,hPenGreen,hPenCyan,hPenGray;
-HBRUSH hBrushBg[NoteCount],hBrushBg0,hBrushRed,hBrushBlue;
-RECT bgRect={0,0,clwidth,clheight};
-short inBuffer[2][BufferLength];
-WAVEHDR WaveHdr[2]={
-	{(LPSTR)inBuffer[0],BufferLength*2,0,0,0,0,0,0},
-	{(LPSTR)inBuffer[1],BufferLength*2,0,0,0,0,0,0}
-};
-WAVEFORMATEX waveformat={WAVE_FORMAT_PCM,1,SampleRate,SampleRate*2,2,16,0};
-
-#include "graph.h"
-#include "defproc.h"
-#include "drawicon.h"
+	if (!buf){
+		buf=buf0;
+	}
+	if (x<0){
+		r=NoteCount-(-x)%NoteCount;
+	}else{
+		r=x%NoteCount;
+	}
+	switch (r){
+	case 0:
+	case 1:
+		buf[0]='C';
+		break;
+	case 2:
+	case 3:
+		buf[0]='D';
+		break;
+	case 4:
+		buf[0]='E';
+		break;
+	case 5:
+	case 6:
+		buf[0]='F';
+		break;
+	case 7:
+	case 8:
+		buf[0]='G';
+		break;
+	case 9:
+	case 10:
+		buf[0]='A';
+		break;
+	case 11:
+		buf[0]='B';
+		break;
+	default:
+		buf[0]='?';
+		break;
+	}
+	switch (r){
+	case 1:
+	case 3:
+	case 6:
+	case 8:
+	case 10:
+		buf[1]='#';
+		break;
+	default:
+		buf[1]='-';
+		break;
+	}
+	r=x/NoteCount;
+	if (x<0){
+		buf[2]='Z'+r;
+	}else if (r>9){
+		buf[2]='A'+r-10;
+	}else{
+		buf[2]='0'+r;
+	}
+	buf[3]=0;
+	return buf;
+}
 
 int translateKey(int x){
 	x&=0x3fff;
@@ -123,6 +137,8 @@ void displayBuffer(HWND hwnd,short *buffer){
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam){
+	static HWND hwndTooltip=NULL;
+	static TOOLINFOW ti[DisplayCount]={};
 	static SCROLLINFO vsi={sizeof(SCROLLINFO),SIF_DISABLENOSCROLL|SIF_PAGE|SIF_POS|SIF_RANGE,0,16,1,16,0};
 	static SCROLLINFO hsi={sizeof(SCROLLINFO),SIF_DISABLENOSCROLL|SIF_PAGE|SIF_POS|SIF_RANGE,0,NoteCount-1,1,0,0};
 	static HWAVEIN hWaveIn=NULL;
@@ -135,6 +151,25 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam){
 
 	switch (message){
 	case WM_CREATE:
+		hwndTooltip=CreateWindowEx(WS_EX_TOPMOST,TOOLTIPS_CLASS,NULL,WS_POPUP|TTS_ALWAYSTIP|TTS_NOPREFIX,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,hwnd,NULL,hInstance,NULL);
+		SetWindowPos(hwndTooltip,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+		for (i=0;i<DisplayCount;++i){
+			ti[i].cbSize=sizeof(TOOLINFOW);
+			ti[i].uFlags=TTF_SUBCLASS;
+			ti[i].hwnd=hwnd;
+			ti[i].uId=i;
+			ti[i].rect.left=i*6;
+			ti[i].rect.top=clheight/2+1;
+			ti[i].rect.right=i*6+5;
+			ti[i].rect.bottom=clheight;
+			ti[i].hinst=hInstance;
+			ti[i].lpszText=LPSTR_TEXTCALLBACK;
+			SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,(LPARAM)&ti[i]);
+		}
+		SendMessageW(hwndTooltip,TTM_SETDELAYTIME,TTDT_AUTOPOP,0x7FFF);
+		SendMessageW(hwndTooltip,TTM_SETDELAYTIME,TTDT_INITIAL,0);
+		SendMessageW(hwndTooltip,TTM_SETDELAYTIME,TTDT_RESHOW,0);
+
 		hPenRed=CreatePen(PS_SOLID,1,RGB(255,0,0));
 		hPenGreen=CreatePen(PS_SOLID,1,RGB(0,255,0));
 		hPenCyan=CreatePen(PS_SOLID,1,RGB(48,192,255));
@@ -221,6 +256,28 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam){
 		ReleaseDC(hwnd,hdc);
 		ValidateRect(hwnd,NULL);
 		return 0;
+	case WM_NOTIFY:{
+		NMHDR *pnmhdr;
+
+		pnmhdr=(NMHDR *)lParam;
+		switch (pnmhdr->code){
+			case TTN_GETDISPINFOW:{
+				static wchar_t buf0[4];
+
+				NMTTDISPINFOW *pnmtdi;
+				int id;
+
+				id=pnmhdr->idFrom;
+				pnmtdi=(NMTTDISPINFOW *)lParam;
+				if (transpose>6){
+					notetext(buf0,pnmhdr->idFrom+StartNote-transpose+12);
+				}else{
+					notetext(buf0,pnmhdr->idFrom+StartNote-transpose);
+				}
+				swprintf(pnmtdi->szText,szTooltip,buf0,notetext(NULL,pnmhdr->idFrom+StartNote));
+			break;}
+		}
+		break;}
 	case WM_SYSCOMMAND:
 		if (wParam==SYSMENU_Top){
 			hMenu=GetSystemMenu(hwnd,FALSE);
@@ -398,7 +455,6 @@ LRESULT CALLBACK WndProc(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam){
 int main(){
 	int argc;
 	wchar_t **argv;
-	HINSTANCE hInstance;
 	int iCmdShow;
 	STARTUPINFOW si;
 

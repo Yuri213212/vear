@@ -1,4 +1,4 @@
-﻿vear (ver 1.0) by Yuri213212
+﻿vear (ver 1.1) by Yuri213212
 
 使用协议：对于所有文件遵循CC BY-NC-SA 4.0。
 https://creativecommons.org/licenses/by-nc-sa/4.0/
@@ -12,6 +12,7 @@ https://creativecommons.org/licenses/by-nc-sa/4.0/
 图像的意义：
 ·上半部分是波形图，下半部分是频谱图
 ·最下方的一条是钢琴上部的形象作为频谱图的横轴， 默认红点位置是绝对C-4
+　·鼠标指向频谱图的某一列时会弹出提示，内容是该列的相对音名与绝对音名
 ·频谱图的纵轴是对数轴，默认最小-48dB最大0dB
 
 操作方法：
